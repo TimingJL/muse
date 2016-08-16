@@ -180,6 +180,49 @@ So in `app/views/posts/index.html.haml`
 ```
 
 
+### Edit & Destroy
+
+
+In `app/controllers/posts_controller.rb`
+```
+def update
+	if @post.update(post_params)
+		redirect_to @post
+	else
+		render 'edit'
+	end
+end
+
+def destroy
+	@post.destroy
+	redirect_to root_path
+end
+```
+
+And in our show page `app/views/posts/show.html.haml`
+```haml
+%h1= @post.title
+%p= @post.link
+%p= @post.description
+
+
+= link_to "Edit", edit_post_path(@post)
+= link_to "Delete", post_path(@post), method: :delete, data: { confirm: "Are you sure?" }
+= link_to "Home", root_path
+```
+
+And let's create a file called `edit.html.haml` under `app/views/posts`
+```haml
+%h1 Edit Inspiration
+
+= render 'form'
+```
+
+
+
+
+
+
 
 
 To be continued...
