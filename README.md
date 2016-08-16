@@ -85,12 +85,100 @@ class PostsController < ApplicationController
 end
 ```
 
+Then, let's create a view `index.html.haml` under `app/views/posts`
+```haml
+%h1 This is a placeholder :)
+```
+
+# CRUD
+Next, let's add the ability to create, edit and destroy a post.         
+In `app/controllers/posts_controller.rb`
+```ruby
+class PostsController < ApplicationController
+	before_action :find_post, only: [:show, :edit, :update, :destroy, :upvote, :downvote]
+
+	def index
+		@posts = Post.all.order("created_at DESC")
+	end
+
+	def show
+	end
+
+	def new
+		@post = Post.new
+	end
+
+	def create
+		@post = Post.new(post_params)
+
+		if @post.save
+			redirect_to @post
+		else
+			render 'new'
+		end
+	end
+
+	def edit
+	end
+
+	def update
+	end
+
+	def destroy
+	end
+
+	private
+
+	def find_post
+		@post = Post.find(params[:id])
+	end
+
+	def post_params
+		params.require(:post).permit(:title, :link, :description)
+	end
+end
+```
 
 
 
+In `app/views/posts`, we create a new file and save it as `new.html.haml`
+```haml
+%h1 Add New Inspiration
+
+= render 'form'
+```
+
+Next, let's create a partial `_form.html.haml` under `app/views/posts` to handle our form.
+```haml
+= simple_form_for @post do |f|
+	= f.input :title
+	= f.input :link
+	= f.input :description
+	= f.button :submit
+```
 
 
- 
+Under `app/views/posts`, let's create a show page `show.html.haml`
+```haml
+%h1= @post.title
+%p= @post.link
+%p= @post.description
+
+= link_to "Home", root_path
+```
+
+
+### Loop Through Our Post
+
+Next, let's loop through our post on the index.      
+So in `app/views/posts/index.html.haml`
+```haml
+- @posts.each do |post|
+	%h2= link_to post.title, post
+
+= link_to 'Add New Inspiration', new_post_path
+```
+
 
 
 
