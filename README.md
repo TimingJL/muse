@@ -218,11 +218,134 @@ And let's create a file called `edit.html.haml` under `app/views/posts`
 = render 'form'
 ```
 
+# Add User to Our Application
+
+After installing Devise and add it to our Gemfile, we need to run the generator
+```console
+$ rails generate devise:install
 
 
+===============================================================================
+
+Some setup you must do manually if you haven't yet:
+
+  1. Ensure you have defined default url options in your environments files. Here
+     is an example of default_url_options appropriate for a development environment
+     in config/environments/development.rb:
+
+       config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
+
+     In production, :host should be set to the actual host of your application.
+
+  2. Ensure you have defined root_url to *something* in your config/routes.rb.
+     For example:
+
+       root to: "home#index"
+
+  3. Ensure you have flash messages in app/views/layouts/application.html.erb.
+     For example:
+
+       <p class="notice"><%= notice %></p>
+       <p class="alert"><%= alert %></p>
+
+  4. You can copy Devise views (for customization) to your app by running:
+
+       rails g devise:views
+
+===============================================================================
+```
+
+Let's copy `config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }` in `config/environments/development.rb`.
 
 
+And add flash messages in `app/views/layouts/application.html.erb` and convert html to haml         
 
+In `app/views/layouts/application.html.haml`
+```haml
+!!!
+%html
+  %head
+    %meta{:content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type"}/
+    %title Muse
+    = csrf_meta_tags
+    = stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload'
+    = javascript_include_tag 'application', 'data-turbolinks-track': 'reload'
+  %body
+    %p.notice= notice
+    %p.alert= alert
+    = yield
+```
+
+Next thing we need to do is generate a Devise model.
+```console
+$ rails g devise User
+$ rake db:migrate
+```
+
+Let's setup the user and make sure that the posts are built from the current user.    
+
+So the first thing we need to do is run a migration.
+```console
+$ rails g migration add_user_id_to_post user_id:integer
+$ rake db:migrate
+```
+
+
+Next thing we need to do is add an association between our user and our post.     
+
+In `app/models/post.rb`
+```ruby
+class Post < ApplicationRecord
+	belongs_to :user
+end
+```
+
+
+In `app/models/user.rb`
+```ruby
+class User < ApplicationRecord
+  # Include default devise modules. Others available are:
+  # :confirmable, :lockable, :timeoutable and :omniauthable
+  devise :database_authenticatable, :registerable,
+         :recoverable, :rememberable, :trackable, :validatable
+  has_many :posts
+end
+```
+
+And inside of our controller `app/controllers/posts_controller.rb`, let's tweak the way our post are created and add a before action for authentication.
+```ruby
+before_action :authenticate_user!, except: [:index, :show]
+
+...
+...
+
+def new
+	@post = current_user.posts.build
+end
+
+def create
+	@post = current_user.posts.build(post_params)
+
+	if @post.save
+		redirect_to @post
+	else
+		render 'new'
+	end
+end
+```
+
+Now, if we pop into the rails console, we can see the `user_id` of the post we previously created is `nil`.
+```console
+$ rails console
+
+> @post = Post.last
+
+  Post Load (0.5ms)  SELECT  "posts".* FROM "posts" ORDER BY "posts"."id" DESC LIMIT ?  [["LIMIT", 1]]       
+=> #<Post id: 1, title: "Craft beer keytar", link: "http://hipsum.co/?paras=4&type=hipster-centric",         
+description: "Craft beer keytar 90's synth, sartorial plaid pour...", created_at: "2016-08-16 09:07:11", updated_at:        "2016-08-16 09:07:11", user_id: nil>
+```
+
+But if we create a new post now, we can see the `user_id` is assigned to current user.
 
 
 To be continued...
