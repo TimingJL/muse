@@ -45,6 +45,8 @@ In `Gemfile`
 gem 'devise'
 gem 'simple_form', github: 'kesha-antonov/simple_form', branch: 'rails-5-0'
 gem 'haml', '~> 4.0.5'
+gem 'paperclip', '~> 4.2.0'
+gem 'acts_as_votable', '~> 0.10.0'
 ```
 Save that, run `bundle install` and restart our server.    
 
@@ -52,6 +54,42 @@ To install simple_form, we should run the generator:
 ```console
 $ rails g simple_form:install
 ```
+
+# Create a Post
+Lets' start with the ability to create a post.         
+```console
+$ rails g model post title:string link:string description:text
+$ rake db:migrate
+```
+
+Next, what we need to do is generate our controller.
+```console
+$ rails g controller Posts
+```
+
+In `config/routes.rb`
+```ruby
+Rails.application.routes.draw do
+  resources :posts
+
+  root 'posts#index'
+end
+```
+
+
+In `app/controllers/posts_controller.rb`
+```ruby
+class PostsController < ApplicationController
+	def index
+	end
+end
+```
+
+
+
+
+
+
  
 
 
