@@ -438,7 +438,7 @@ end
 ```
 
 ```ruby
-# Mackenzie Child's code userd in Rails 4
+# Mackenzie Child's code used in Devise 3.4.1
 class ApplicationController < ActionController::Base
 	protect_from_forgery with: :exception
 
@@ -456,6 +456,7 @@ But The Parameter Sanitaizer API has changed for Devise 4.
 (http://stackoverflow.com/questions/37341967/rails-5-undefined-method-for-for-devise-on-line-devise-parameter-sanitizer)          
 So we tweak the code to 
 ```ruby
+# My code used in Devise 4
 class ApplicationController < ActionController::Base
 	protect_from_forgery with: :exception
 
@@ -486,7 +487,75 @@ So in the show page `app/views/posts/show.html.haml`, we can add user name to it
 = link_to "Home", root_path
 ```
 
+# Image Uploading
+https://github.com/thoughtbot/paperclip         
+
+After add `paperclip` to our Gemfile, the next thing we need to do is add `has_attached_file` and `validates_attachment_content_type` inside of our class of image uploading. So we paste it to        
+`app/models/post.rb`
+```ruby
+class Post < ApplicationRecord
+	belongs_to :user
+	has_attached_file :image, styles: { medium: "700x500#", small: "350x250>" }
+	validates_attachment_content_type :image, content_type: /\Aimage\/.*\Z/	
+end
+```
+
+Next, we need to run the migration for the post model and the image upload.
+```console
+$ rails generate paperclip post image
+$ rake db:migrate
+```
+
+Then we need to add file upload `= f.input :image` to our form.        
+Under `app/views/posts/_form.html.haml`
+```haml
+= simple_form_for @post do |f|
+	= f.input :image
+	= f.input :title
+	= f.input :link
+	= f.input :description
+	= f.button :submit
+```
+
+Next, we need to also permit this image attribute inside of our controller.       
+In `app/controllers/posts_controller.rb`
+```ruby
+def post_params
+	params.require(:post).permit(:title, :link, :description, :image)
+end
+```
+
+So let's go to the `http://localhost:3000/posts/new`, the file uploading is showing up.
+![image](https://github.com/TimingJL/muse/blob/master/pic/image_uploading.jpeg)
 
 
+
+Next, we want the image to show up inside of our show page.       
+So in `app/views/posts/show.html.haml`
+```haml
+= image_tag @post.image.url(:medium)
+%h1= @post.title
+%p= @post.link
+%p= @post.description
+%p= @post.user.name
+
+
+= link_to "Edit", edit_post_path(@post)
+= link_to "Delete", post_path(@post), method: :delete, data: { confirm: "Are you sure?" }
+= link_to "Home", root_path
+```
+![image](https://github.com/TimingJL/muse/blob/master/pic/show_image.jpeg)
+
+
+
+In `app/views/posts/index.html.haml`, we want to show up the image above the title..
+```haml
+- @posts.each do |post|
+	= link_to (image_tag post.image.url(:small))
+	%h2= link_to post.title, post
+
+= link_to 'Add New Inspiration', new_post_path
+```
+![image](https://github.com/TimingJL/muse/blob/master/pic/show_small_image.jpeg)
 
 To be continued...
