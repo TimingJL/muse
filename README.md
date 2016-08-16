@@ -348,4 +348,145 @@ description: "Craft beer keytar 90's synth, sartorial plaid pour...", created_at
 But if we create a new post now, we can see the `user_id` is assigned to current user.
 
 
+# Add Field
+Next, in sign-up page, we wanna also have a name field. First we need to run a migration.
+```console
+$ rails g migration add_name_to_user name:string
+$ rake db:migrate
+```
+
+Then we need to copy over the devise views.
+```console
+$ rails g devise:views
+```
+
+So what we need to do is add a name field to our sign-up form.       
+Let's go to `app/views/devise/registration/new.html.erb`, and add `<%= f.input :name, required: true, autofocus: true %>`.
+```html
+
+	<h2>Sign up</h2>
+
+	<%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
+	  <%= f.error_notification %>
+
+	  <div class="form-inputs">
+	  	<%= f.input :name, required: true, autofocus: true %>
+	    <%= f.input :email, required: true %>
+	    <%= f.input :password, required: true, hint: ("#{@minimum_password_length} characters minimum" if @minimum_password_length) %>
+	    <%= f.input :password_confirmation, required: true %>
+	  </div>
+
+	  <div class="form-actions">
+	    <%= f.button :submit, "Sign up" %>
+	  </div>
+	<% end %>
+
+	<%= render "devise/shared/links" %>
+```
+
+Then in `app/views/devise/registration/edit.html.erb`, let's do the same thing.
+```html
+
+	<h2>Edit <%= resource_name.to_s.humanize %></h2>
+
+	<%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
+	  <%= f.error_notification %>
+
+	  <div class="form-inputs">
+	    <%= f.input :name, required: true, autofocus: true %>
+	    <%= f.input :email, required: true %>
+
+	    <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+	      <p>Currently waiting confirmation for: <%= resource.unconfirmed_email %></p>
+	    <% end %>
+
+	    <%= f.input :password, autocomplete: "off", hint: "leave it blank if you don't want to change it", required: false %>
+	    <%= f.input :password_confirmation, required: false %>
+	    <%= f.input :current_password, hint: "we need your current password to confirm your changes", required: true %>
+	  </div>
+
+	  <div class="form-actions">
+	    <%= f.button :submit, "Update" %>
+	  </div>
+	<% end %>
+
+	<h3>Cancel my account</h3>
+
+	<p>Unhappy? <%= link_to "Cancel my account", registration_path(resource_name), data: { confirm: "Are you sure?" }, method: :delete %></p>
+
+	<%= link_to "Back", :back %>
+```
+![image](https://github.com/TimingJL/muse/blob/master/pic/name_field.jpeg)
+
+
+A few other things for this to work is we need to add something to our application controller.        
+In `app/controllers/application_controller.rb`
+```ruby
+# Mackenzie Child's code userd in Rails 4
+class ApplicationController < ActionController::Base
+	protect_from_forgery with: :exception
+
+	before_filter :configure_permitted_parameters, if: :devise_controller?
+
+	protected
+
+	def configure_permitted_parameters
+	  devise_parameter_sanitizer.for(:sign_up) << :name
+	  devise_parameter_sanitizer.for(:account_update) << :name
+	end
+end
+```
+
+```ruby
+# Mackenzie Child's code userd in Rails 4
+class ApplicationController < ActionController::Base
+	protect_from_forgery with: :exception
+
+	before_filter :configure_permitted_parameters, if: :devise_controller?
+
+	protected
+
+	def configure_permitted_parameters
+	  devise_parameter_sanitizer.for(:sign_up) << :name
+	  devise_parameter_sanitizer.for(:account_update) << :name
+	end
+end
+```
+But The Parameter Sanitaizer API has changed for Devise 4.             
+(http://stackoverflow.com/questions/37341967/rails-5-undefined-method-for-for-devise-on-line-devise-parameter-sanitizer)          
+So we tweak the code to 
+```ruby
+class ApplicationController < ActionController::Base
+	protect_from_forgery with: :exception
+
+	before_filter :configure_permitted_parameters, if: :devise_controller?
+
+	protected
+
+	def configure_permitted_parameters
+	  devise_parameter_sanitizer.permit(:sign_up, keys: [:name])
+	  devise_parameter_sanitizer.permit(:account_update, keys: [:name])
+	end
+end
+```         
+
+
+Then we can go to `http://localhost:3000/users/edit` to add our user name.     
+
+So in the show page `app/views/posts/show.html.haml`, we can add user name to it.
+```haml
+%h1= @post.title
+%p= @post.link
+%p= @post.description
+%p= @post.user.name
+
+
+= link_to "Edit", edit_post_path(@post)
+= link_to "Delete", post_path(@post), method: :delete, data: { confirm: "Are you sure?" }
+= link_to "Home", root_path
+```
+
+
+
+
 To be continued...
