@@ -558,4 +558,133 @@ In `app/views/posts/index.html.haml`, we want to show up the image above the tit
 ```
 ![image](https://github.com/TimingJL/muse/blob/master/pic/show_small_image.jpeg)
 
+# Comments
+
+The next thing we should do is add comments to our post. To do that, let's generate a comment model.
+```console
+$ rails g model comment content:text post:references user:references
+$ rake db:migrate
+```
+
+Then, we need to add association between our different model.     
+In `app/models/post.rb`
+```ruby
+class Post < ApplicationRecord
+	belongs_to :user
+	has_many :comments
+	has_attached_file :image, styles: { medium: "700x500#", small: "350x250>" }
+	validates_attachment_content_type :image, content_type: /\Aimage\/.*\Z/	
+end
+```
+
+In `app/models/user.rb`
+```
+class User < ApplicationRecord
+  # Include default devise modules. Others available are:
+  # :confirmable, :lockable, :timeoutable and :omniauthable
+  devise :database_authenticatable, :registerable,
+         :recoverable, :rememberable, :trackable, :validatable
+  has_many :posts
+  has_many :comments
+end
+```
+
+And the next thing we need to do is add some routes for comments.
+```ruby
+Rails.application.routes.draw do
+  devise_for :users
+  resources :posts do
+  	resources :comments
+  end
+
+  root 'posts#index'
+end
+```
+
+
+Now, let's create a controller for our comments.
+```console
+$ rails g controller comments
+```
+
+
+So in `app/controllers/comments_controller.rb`
+```ruby
+class CommentsController < ApplicationController
+	before_action :authenticate_user!
+
+	def create
+		@post = Post.find(params[:post_id])
+		@comment = Comment.create(params[:comment].permit(:content))
+		@comment.user_id = current_user.id
+		@comment.post_id = @post.id
+
+		if @comment.save
+			redirect_to post_path(@post)
+		else
+			render 'new'
+		end
+	end
+end
+```
+
+
+Let's create a partial under `app/views/comments` and save it as `_form.html.haml`.
+```haml
+= simple_form_for([@post, @post.comments.build]) do |f|
+	= f.input :content, label: "Reply to thread"
+	= f.button :submit, class: "button"
+```
+
+Then, we need to show up out our comment inside of our show page.     
+In `app/views/posts/show.html.haml`
+```haml
+= image_tag @post.image.url(:medium)
+%h1= @post.title
+%p= @post.link
+%p= @post.description
+%p= @post.user.name
+
+#comment
+	%h2.comment_count= pluralize(@post.comments.count, "Comment")
+	- @comments.each do |comment|
+		.comment
+			%p.username= comment.user.name
+			%p.content= comment.content
+
+	= render 'comments/form'
+
+= link_to "Edit", edit_post_path(@post)
+= link_to "Delete", post_path(@post), method: :delete, data: { confirm: "Are you sure?" }
+= link_to "Home", root_path
+```
+
+
+In `app/controllers/posts_controller.rb`, we need to define comments in our show action.
+```ruby
+def show
+	@comments = Comment.where(post_id: @post)
+end
+```
+![image](https://github.com/TimingJL/muse/blob/master/pic/add_comment.jpeg)
+
+Let's add the comment count to the index.
+In `app/views/posts/index.html.haml`
+```haml
+- @posts.each do |post|
+	= link_to (image_tag post.image.url(:small))
+	%h2= link_to post.title, post
+	%p= pluralize(post.comments.count, "Comment")
+
+= link_to 'Add New Inspiration', new_post_path
+```
+
+
+
+
+
+
+
+
+
 To be continued...
