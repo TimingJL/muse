@@ -679,6 +679,105 @@ In `app/views/posts/index.html.haml`
 = link_to 'Add New Inspiration', new_post_path
 ```
 
+# Add Likes/Voting System
+Let's add likes or voting system to our posts.       
+https://github.com/ryanto/acts_as_votable         
+
+We already add it to our Gemfile. So the next thing we need to do is create migration for it.
+```console
+$ rails generate acts_as_votable:migration
+$ rake db:migrate
+```
+
+And we need to add `acts_as_votable` to our model.        
+So in `app/models/post.rb`
+```ruby
+class Post < ApplicationRecord
+	acts_as_votable
+	belongs_to :user
+	has_many :comments
+	has_attached_file :image, styles: { medium: "700x500#", small: "350x250>" }
+	validates_attachment_content_type :image, content_type: /\Aimage\/.*\Z/	
+end
+```
+
+Next, let's create some routes.       
+In `config/routes.rb`
+```ruby
+Rails.application.routes.draw do
+  devise_for :users
+  resources :posts do
+  	member do
+  		get "like", to: "posts#upvote"
+  		get "dislike", to: "posts#downvote"
+  	end
+  	resources :comments
+  end
+
+  root 'posts#index'
+end
+```
+
+
+Next thing we need to do is define `upvote` and `downvote`.          
+In `app/controllers/posts_controller.rb`
+```ruby
+def upvote
+	@post.upvote_by current_user
+	redirect_to :back
+end
+
+def downvote
+	@post.downvote_by current_user
+	redirect_to :back		
+end
+```
+
+And we need to add upvote and downvote links to our show page.        
+In `app/views/posts/show.html.haml`
+```haml
+= image_tag @post.image.url(:medium)
+%h1= @post.title
+%p= @post.link
+%p= @post.description
+%p= @post.user.name
+%p= pluralize(@post.get_likes.size, "Like")
+%p= pluralize(@post.get_dislikes.size, "Dislike")
+
+= link_to "Like", like_post_path(@post), method: :get
+= link_to "Dislike", dislike_post_path(@post), method: :get
+
+#comment
+	%h2.comment_count= pluralize(@post.comments.count, "Comment")
+	- @comments.each do |comment|
+		.comment
+			%p.username= comment.user.name
+			%p.content= comment.content
+
+	= render 'comments/form'
+
+= link_to "Edit", edit_post_path(@post)
+= link_to "Delete", post_path(@post), method: :delete, data: { confirm: "Are you sure?" }
+= link_to "Home", root_path
+```
+
+
+Then in the index page, we also wanna add a like and dislike count.       
+In `app/views/posts/index.html.haml`
+```haml
+- @posts.each do |post|
+	= link_to (image_tag post.image.url(:small))
+	%h2= link_to post.title, post
+	%p= pluralize(post.comments.count, "Comment")
+	%p= pluralize(post.get_likes.size, "Like")
+
+= link_to 'Add New Inspiration', new_post_path
+```
+
+
+
+
+
 
 
 
