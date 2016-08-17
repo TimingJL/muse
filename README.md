@@ -25,7 +25,7 @@ https://mackenziechild.me/12-in-12/12/
 
 ![image](https://github.com/TimingJL/muse/blob/master/pic/index_unsign.jpeg)
 ![image](https://github.com/TimingJL/muse/blob/master/pic/index_signin.jpeg)
-![image](https://github.com/TimingJL/muse/blob/master/pic/random_post.png)
+![image](https://github.com/TimingJL/muse/blob/master/pic/random_post.jpeg)
 
 
 # Create A Dribbble Type App
@@ -1258,7 +1258,7 @@ def show
 	@random_post = Post.where.not(id: @post).order("RANDOM()").first
 end
 ```
-![image](https://github.com/TimingJL/muse/blob/master/pic/random_post.png)
+![image](https://github.com/TimingJL/muse/blob/master/pic/random_post.jpeg)
 
 
 
