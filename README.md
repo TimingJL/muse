@@ -17,9 +17,15 @@ This time, we create a project called Muse. A user can sign-up and share what is
 3. Voting
 4. Comments
 5. Custom Styling
+6. Random Post
 
 
 https://mackenziechild.me/12-in-12/12/            
+
+
+![image](https://github.com/TimingJL/muse/blob/master/pic/index_unsign.jpeg)
+![image](https://github.com/TimingJL/muse/blob/master/pic/index_signin.jpeg)
+![image](https://github.com/TimingJL/muse/blob/master/pic/random_post.png)
 
 
 # Create A Dribbble Type App
@@ -1184,4 +1190,76 @@ Then, let's remove the `//= require turbolinks` in the `app/assets/javascripts/a
 
 
 
-To be continued...
+### Random Post
+We wanna add an random post to our show page.
+
+In `app/views/posts/show.html.haml`
+```haml
+#post_show
+	%h1= @post.title
+	%p.username
+		Shared by
+		= @post.user.name
+		about
+		= time_ago_in_words(@post.created_at)
+	.clearfix
+		.post_image_description
+			= image_tag @post.image.url(:medium)
+			.description= simple_format(@post.description)
+		.post_data
+			= link_to "Visit Link", @post.link, class: "button"
+			= link_to like_post_path(@post), method: :get, class: "data" do
+				%i.fa.fa-thumbs-o-up
+				= pluralize(@post.get_upvotes.size, "Like")
+			= link_to dislike_post_path(@post), method: :get, class: "data" do
+				%i.fa.fa-thumbs-o-down
+				= pluralize(@post.get_downvotes.size, "Dislike")
+			%p.data
+				%i.fa.fa-comments-o
+				= pluralize(@post.comments.count, "Comment")
+			- if @post.user == current_user
+				= link_to "Edit", edit_post_path(@post), class: "data"
+				= link_to "Delete", post_path(@post), method: :delete, data: { confirm: "Are you sure?" }, class: "data"
+		#random_post
+			%h3 Random Inspiration
+			.post
+				.post_image
+					= link_to (image_tag @random_post.image.url(:medium)), post_path(@random_post)
+				.post_content
+					.title
+						%h2= link_to @random_post.title, post_path(@random_post)
+					.data.clearfix
+						%p.username
+							Shared by
+							= @random_post.user.name
+						%p.buttons
+							%span
+								%i.fa.fa-comments-o
+								= @random_post.comments.count
+							%span
+								%i.fa.fa-thumbs-o-up
+								= @random_post.get_likes.size
+
+#comments
+	%h2.comment_count= pluralize(@post.comments.count, "Comment")
+	- @comments.each do |comment|
+		.comment
+			%p.username= comment.user.name
+			%p.content= comment.content
+
+	= render "comments/form"
+```
+
+And lets' define the @random in our `app/controllers/posts_controller.rb`.       
+We find the id which is not the current post.
+```ruby
+def show
+	@comments = Comment.where(post_id: @post)
+	@random_post = Post.where.not(id: @post).order("RANDOM()").first
+end
+```
+![image](https://github.com/TimingJL/muse/blob/master/pic/random_post.png)
+
+
+
+Finished!
