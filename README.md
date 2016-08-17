@@ -1097,7 +1097,7 @@ Then in `app/assets/stylesheets/posts.css.scss`
 ```
 
 
-### Add some structure to our file
+### Add some structure to our index
 
 In `app/views/posts/index.html.haml`
 ```haml
@@ -1178,6 +1178,9 @@ In `app/views/posts/show.html.haml`
 	= render "comments/form"
 ```
 ![image](https://github.com/TimingJL/muse/blob/master/pic/styling_show.png)
+
+
+Then, let's remove the `//= require turbolinks` in the `app/assets/javascripts/application.js` and `gem 'turbolinks', '~> 5'` in our Gemfile.
 
 
 
